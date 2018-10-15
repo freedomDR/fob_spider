@@ -13,7 +13,7 @@ class ZjrSpider(scrapy.Spider):
     index = 1
 
     def get_proxy(self):
-        return requests.get("http://123.207.35.36:5010/get/").content
+        return requests.get("http://127.0.0.1:5010/get/").content
 
     def parse(self, response):
         self.index += 1
@@ -57,6 +57,8 @@ class ZjrSpider(scrapy.Spider):
             elif content.text.strip() == '': 
                 content = '作者回复的是表情-_-'
                 continue
+            elif author == '':
+                continue
             else: 
                 content = content.text
                 content = content.replace('\xa0', '')
@@ -69,5 +71,6 @@ class ZjrSpider(scrapy.Spider):
                     "file_id": tmp_url}
         if soup.find('a', class_='p_pages') is not None:
             if cur_page < max_page:
-                yield scrapy.Request('http://bbs.fobshanghai.com/viewthread.php?tid='+tmp_url+'&extra=&page=' + str(cur_page), callback=self.parse_item)
+                proxy = str(self.get_proxy(), encoding='utf-8')
+                yield scrapy.Request('http://bbs.fobshanghai.com/viewthread.php?tid='+tmp_url+'&extra=&page=' + str(cur_page), callback=self.parse_item, meta={'proxy':'http://'+proxy})
                 
