@@ -3,6 +3,7 @@ import scrapy
 from bs4 import BeautifulSoup
 import logging 
 import requests
+import re
 
 class ZjrSpider(scrapy.Spider):
     name = 'bbs'
@@ -15,6 +16,9 @@ class ZjrSpider(scrapy.Spider):
 
     def get_proxy(self):
         return requests.get("http://proxy_pool:5010/get/").content
+
+    def del_proxy(self, hostip):
+        requests.get("http://proxy_pool:5010/delete/?proxy={}".format(hostip))
     
     def start_requests(self):
         for url in self.start_urls:
@@ -23,6 +27,10 @@ class ZjrSpider(scrapy.Spider):
 
     def parse(self, response):
         self.index += 1
+        # 判断代理是否被封
+        if len(soup.find_all('a', href=re.compile('ip\.'))) == 1:
+            self.del_proxy(response.request.meta['proxy'])
+            return
         soup = BeautifulSoup(response.text, 'lxml-xml')
         titles = soup.find_all('td', class_='f_title')
         authors = soup.find_all('td', class_='f_author')
@@ -43,6 +51,10 @@ class ZjrSpider(scrapy.Spider):
             
     def parse_item(self, response):
         soup = BeautifulSoup(response.text, 'html5lib')
+        # 判断代理是否被封
+        if len(soup.find_all('a', href=re.compile('ip\.'))) == 1:
+            self.del_proxy(response.request.meta['proxy'])
+            return
         only_one_page = False
         cur_page, max_page = 0, 0
         tmp_url = ''
