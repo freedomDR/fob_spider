@@ -8,7 +8,7 @@ class ZjrSpider(scrapy.Spider):
     name = 'bbs'
     start_urls = ['http://bbs.fobshanghai.com/forum-161-1.html']
     basic_url = 'http://bbs.fobshanghai.com/'
-    max_index = 1025
+    max_index = 40
 
     index = 1
 
