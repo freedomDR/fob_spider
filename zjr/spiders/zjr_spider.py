@@ -6,7 +6,8 @@ import requests
 
 class ZjrSpider(scrapy.Spider):
     name = 'bbs'
-    start_urls = ['http://bbs.fobshanghai.com/forum-161-1.html']
+    data = ['161', '106', '177', '204', '120', '216', '205']
+    start_urls = ['http://bbs.fobshanghai.com/forum-'+data[0]+'-1.html']
     basic_url = 'http://bbs.fobshanghai.com/'
     max_index = 40
 
@@ -14,6 +15,11 @@ class ZjrSpider(scrapy.Spider):
 
     def get_proxy(self):
         return requests.get("http://127.0.0.1:5010/get/").content
+    
+    def start_requests(self):
+        for url in self.start_urls:
+            proxy = str(self.get_proxy(), encoding='utf-8')
+            yield scrapy.Request(url=url, callback=self.parse, meta={'proxy':'http://'+proxy})
 
     def parse(self, response):
         self.index += 1
@@ -32,7 +38,7 @@ class ZjrSpider(scrapy.Spider):
         next_html = ''
         tmp = soup.find_all('a', 'p_redirect')
         if self.index <= self.max_index:
-            next_html = self.basic_url + 'forum-161-'+ str(self.index) + '.html'
+            next_html = self.basic_url + 'forum-'+data[0]+'-'+ str(self.index) + '.html'
             yield scrapy.Request(next_html, callback=self.parse)
             
     def parse_item(self, response):
