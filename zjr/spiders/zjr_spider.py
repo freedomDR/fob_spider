@@ -38,7 +38,7 @@ class ZjrSpider(scrapy.Spider):
         next_html = ''
         tmp = soup.find_all('a', 'p_redirect')
         if self.index <= self.max_index:
-            next_html = self.start_url[:self.start_urls.rfind('-')+1] + str(self.index) + '.html'
+            next_html = self.start_urls[0][:self.start_urls[0].rfind('-')+1] + str(self.index) + '.html'
             yield scrapy.Request(next_html, callback=self.parse)
             
     def parse_item(self, response):
