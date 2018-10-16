@@ -55,7 +55,7 @@ class ZjrSpider(scrapy.Spider):
     def parse_item(self, response):
         soup = BeautifulSoup(response.text, 'html5lib')
         # 判断代理是否被封
-        if len(soup.find_all('a', href=re.compile('ip\.'))) == 1:
+        if len(soup.find_all('a', href=re.compile('ip\.'))) == 1 or soup.find('form') is None:
             self.del_proxy(response.meta['hostip'])
             proxy = str(self.get_proxy(), encoding='utf-8')
             yield scrapy.Request(url=response.meta['me_url'], callback=self.parse, meta={'proxy':'http://'+proxy, 'hostip':proxy, 'me_url':response.meta['me_url']})
