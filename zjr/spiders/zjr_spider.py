@@ -23,15 +23,16 @@ class ZjrSpider(scrapy.Spider):
     def start_requests(self):
         for url in self.start_urls:
             proxy = str(self.get_proxy(), encoding='utf-8')
-            yield scrapy.Request(url=url, callback=self.parse, meta={'proxy':'http://'+proxy, 'hostip':proxy})
+            yield scrapy.Request(url=url, callback=self.parse, meta={'proxy':'http://'+proxy, 'hostip':proxy, 'me_url':url})
 
     def parse(self, response):
         self.index += 1
-        soup = BeautifulSoup(response.text, 'lxml-xml')
+        soup = BeautifulSoup(response.text, 'html5lib')
         # 判断代理是否被封
         if len(soup.find_all('a', href=re.compile('ip\.'))) == 1:
             self.del_proxy(response.meta['hostip'])
-            return
+            proxy = str(self.get_proxy(), encoding='utf-8')
+            yield scrapy.Request(url=response.meta['me_url'], callback=self.parse, meta={'proxy':'http://'+proxy, 'hostip':proxy, 'me_url':response.meta['me_url']})
         titles = soup.find_all('td', class_='f_title')
         authors = soup.find_all('td', class_='f_author')
         times = soup.find_all('td', class_='f_last')
@@ -42,19 +43,22 @@ class ZjrSpider(scrapy.Spider):
                 #          "last time": times[i].a.text,
                 #          "file_id": titles[i].a['href'].split('-')[1]}
                 proxy = str(self.get_proxy(), encoding='utf-8')
-                yield scrapy.Request(self.basic_url + titles[i].a['href'], callback=self.parse_item, meta={'proxy': "http://"+proxy, 'hostip':proxy})
+                url = self.basic_url + titles[i].a['href']
+                yield scrapy.Request(url=url, callback=self.parse_item, meta={'proxy': "http://"+proxy, 'hostip':proxy, 'me_url':url})
         next_html = ''
         tmp = soup.find_all('a', 'p_redirect')
         if self.index <= self.max_index:
             next_html = self.start_urls[0][:self.start_urls[0].rfind('-')+1] + str(self.index) + '.html'
-            yield scrapy.Request(next_html, callback=self.parse)
+            proxy = str(self.get_proxy(), encoding='utf-8')
+            yield scrapy.Request(next_html, callback=self.parse, meta={'proxy': "http://"+proxy, 'hostip':proxy, 'me_url':next_html})
             
     def parse_item(self, response):
         soup = BeautifulSoup(response.text, 'html5lib')
         # 判断代理是否被封
         if len(soup.find_all('a', href=re.compile('ip\.'))) == 1:
             self.del_proxy(response.meta['hostip'])
-            return
+            proxy = str(self.get_proxy(), encoding='utf-8')
+            yield scrapy.Request(url=response.meta['me_url'], callback=self.parse, meta={'proxy':'http://'+proxy, 'hostip':proxy, 'me_url':response.meta['me_url']})
         only_one_page = False
         cur_page, max_page = 0, 0
         tmp_url = ''
@@ -90,5 +94,7 @@ class ZjrSpider(scrapy.Spider):
         if soup.find('a', class_='p_pages') is not None:
             if cur_page < max_page:
                 proxy = str(self.get_proxy(), encoding='utf-8')
-                yield scrapy.Request('http://bbs.fobshanghai.com/viewthread.php?tid='+tmp_url+'&extra=&page=' + str(cur_page), callback=self.parse_item, meta={'proxy':'http://'+proxy, 'hostip': proxy})
+                url = 'http://bbs.fobshanghai.com/viewthread.php?tid='+tmp_url+'&extra=&page=' + str(cur_page)
+                yield scrapy.Request('http://bbs.fobshanghai.com/viewthread.php?tid='+tmp_url+'&extra=&page=' + str(cur_page), callback=self.parse_item, \
+                        meta={'proxy':'http://'+proxy, 'hostip': proxy, 'me_url':url})
                 
